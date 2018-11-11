@@ -1,12 +1,62 @@
-
 from flask_restful import Resource, reqparse
 # from flask_jwt import jwt_required
 from models.cargo import CargoModel
 
+class CargoPost(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('id',
+                        type=int
 
+                        )
+    parser.add_argument('weight',
+                        type=float,
+                        # required=True,
+                        help="This field cannot be left blank!"
+                        )
+    parser.add_argument('ship_id',
+                        type=int,
+                        required=True,
+                        help="Every cargo needs a ship_id."
+                        )
+    parser.add_argument('content',
+                        type=str,
+                        required=True,
+                        help="This field cannot be left blank!"
+                        )
+    parser.add_argument('delivery_date',
+                        type=int,
+                        required=True,
+                        help="Every cargo needs a ship_id."
+                        )
+    parser.add_argument('cargoSelf',
+                        type=str,
+                        required=True,
+                        help="This field cannot be left blank!"
+                        )
+
+    def post(self):
+        data = Cargo.parser.parse_args()
+        id = data['id']
+        if CargoModel.find_by_id(id):
+            return {'message': "An cargo with id '{}' already exists.".format(id)}, 400
+
+
+
+        cargo = CargoModel(id, data['weight'], data['ship_id'], data['content'], data['delivery_date'], data['cargoSelf'])
+
+        try:
+            cargo.save_to_db()
+        except:
+            return {"message": "An error occurred inserting the cargo."}, 500
+
+        return cargo.json(), 201
 
 class Cargo(Resource):
     parser = reqparse.RequestParser()
+    parser.add_argument('id',
+                        type=int
+
+                        )
     parser.add_argument('weight',
                         type=float,
                         # required=True,
@@ -39,20 +89,6 @@ class Cargo(Resource):
             return cargo.json()
         return {'message': 'Cargo not found'}, 404
 
-    def post(self, id):
-        if CargoModel.find_by_id(id):
-            return {'message': "An cargo with id '{}' already exists.".format(id)}, 400
-
-        data = Cargo.parser.parse_args()
-
-        cargo = CargoModel(id, **data)
-
-        try:
-            cargo.save_to_db()
-        except:
-            return {"message": "An error occurred inserting the cargo."}, 500
-
-        return cargo.json(), 201
 
     def delete(self, id):
         cargo = CargoModel.find_by_id(id)
@@ -72,7 +108,7 @@ class Cargo(Resource):
             cargo.delivery_date= data['delivery_date']
             cargo.cargoSelf = data['cargoSelf']
         else:
-            cargo = CargoModel(id, **data)
+            cargo = CargoModel(id, data['weight'], data['ship_id'], data['content'], data['delivery_date'], data['cargoSelf'])
 
         cargo.save_to_db()
 
